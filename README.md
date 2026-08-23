@@ -1,2 +1,2 @@
-# Rekiem-Oficial
-Rekiem único bot 
+# Blurkit ofi
+Blurkit únco
