@@ -4,7 +4,6 @@ Blurkit Bot - Versión con DASHBOARD WEB integrado
 ✅ Tu código original se mantiene intacto
 ✅ Se agregó integración con panel web (FastAPI puerto 5000)
 """
-
 import os
 import re
 import json
@@ -13,25 +12,19 @@ import datetime
 import threading  # ✅ NUEVO: Para iniciar dashboard en segundo plano
 import time       # ✅ NUEVO
 from datetime import timezone, timedelta
-
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks  # ✅ AGREGADO: tasks
-
 from dotenv import load_dotenv
 load_dotenv()
-
 TOKEN = os.getenv('DISCORD_TOKEN')
-
 # ==============================================
 # ✅ NUEVO: IMPORTAR ESTADO COMPARTIDO (DASHBOARD)
 # ==============================================
 from shared_state import state
-
 # Se cambia a all() para permitir la escucha de eventos de auditoría, hilos, roles y webhooks
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
-
 # --- CONFIGURACIÓN CENTRAL ---
 bot.BANNER_IP = "https://i.imgur.com/KrfKrBo.png"
 bot.LOGO_BLURKIT = "https://i.imgur.com/ug6rEVD.png"
@@ -40,19 +33,15 @@ bot.ID_SERVIDOR_CONTEO = 1214549433039982693  # Guardado por si tus Cogs lo usan
 bot.ID_ROL_STAFF_PERMISOS = 1353825860246835221
 bot.ID_ROL_MOD_FALLBACK = 454786761663447050
 bot.ID_ROL_BOOSTER = 601542293303984149
-
 # ========== CONFIGURACION ESPECIAL MATRIMONIO ==========
 CANAL_MATRIMONIO_ID = 1394950220541857844  # Canal donde TODOS pueden usar !marry y sus comandos
-
 # Lista de comandos del sistema de matrimonio (para la excepcion en el check global)
 COMANDOS_MATRIMONIO = {
     "marry", "casar", "casarse",
     "kiss", "hug", "slap", "cuddle", "feed", "shot"
 }
-
 ARCHIVO_HISTORIAL = "historial.json"
 ARCHIVO_LOGS_CONFIG = "logs_config.json"
-
 # --- FUNCIONES DE EXPEDIENTES ---
 def cargar_historial():
     if not os.path.exists(ARCHIVO_HISTORIAL):
@@ -64,11 +53,9 @@ def cargar_historial():
             return json.load(f)
     except Exception:
         return {}
-
 def guardar_historial(datos):
     with open(ARCHIVO_HISTORIAL, "w") as f:
         json.dump(datos, f, indent=4)
-
 def registrar_sancion(user_id, tipo, moderador, razon, duracion):
     historial = cargar_historial()
     str_id = str(user_id)
@@ -81,7 +68,6 @@ def registrar_sancion(user_id, tipo, moderador, razon, duracion):
     guardar_historial(historial)
     # ✅ NUEVO: Registrar en logs del dashboard
     state.add_log(f"🚨 Sanción: {tipo} | Usuario: {user_id} | Moderador: {moderador}")
-
 def parse_duration_td(duration_str: str) -> datetime.timedelta:
     try:
         clean_str = duration_str.lower().strip()
@@ -95,7 +81,6 @@ def parse_duration_td(duration_str: str) -> datetime.timedelta:
             return datetime.timedelta(minutes=int(clean_str))
     except Exception:
         return datetime.timedelta(minutes=10)
-
 async def buscar_usuario_dinamico(ctx, query: str):
     query = query.strip()
     clean_query = re.sub(r'[<@!>]', '', query)
@@ -117,7 +102,6 @@ async def buscar_usuario_dinamico(ctx, query: str):
         lambda m: query_low in m.name.lower() or (m.nick and query_low in m.nick.lower()),
         ctx.guild.members if ctx.guild else []
     )
-
 # --- ALERTA DM ---
 async def enviar_alerta_dm(usuario: discord.User, titulo: str, description: str, staff: str, razon: str, color: discord.Color):
     try:
@@ -136,7 +120,6 @@ async def enviar_alerta_dm(usuario: discord.User, titulo: str, description: str,
         await usuario.send(embed=embed)
     except Exception:
         pass
-
 def obtener_embed_no_permiso(bot_instance):
     embed = discord.Embed(
         title="🚫 ACCESO RESTRINGIDO",
@@ -146,7 +129,6 @@ def obtener_embed_no_permiso(bot_instance):
     embed.add_field(name="🔒 Seguridad", value="Requiere Staff Directivo o rango explícito.")
     embed.set_thumbnail(url=bot_instance.LOGO_BLURKIT)
     return embed
-
 # ✅ FUNCIONES DE PERMISOS SIMPLIFICADAS
 def verificar_permisos_texto(ctx) -> bool:
     user_roles = [r.id for r in ctx.author.roles]
@@ -155,7 +137,6 @@ def verificar_permisos_texto(ctx) -> bool:
     if bot.ID_ROL_STAFF_PERMISOS in user_roles or bot.ID_ROL_MOD_FALLBACK in user_roles:
         return True
     return False
-
 def verificar_permisos_comando(interaction: discord.Interaction) -> bool:
     user_roles = [r.id for r in interaction.user.roles]
     if interaction.user.guild_permissions.administrator:
@@ -163,7 +144,6 @@ def verificar_permisos_comando(interaction: discord.Interaction) -> bool:
     if bot.ID_ROL_STAFF_PERMISOS in user_roles or bot.ID_ROL_MOD_FALLBACK in user_roles:
         return True
     return False
-
 # ========== ✅ NUEVO: DETECTAR SI ES COMANDO DE MATRIMONIO ==========
 def _es_comando_matrimonio(ctx) -> bool:
     """Detecta si el comando invocado pertenece al sistema de matrimonio"""
@@ -182,7 +162,6 @@ def _es_comando_matrimonio(ctx) -> bool:
             return True
     
     return False
-
 # --- INTERCEPTOR GLOBAL ✅ CORREGIDO CON EXCEPCION DE MATRIMONIO ---
 @bot.check
 async def global_permissions_check(ctx):
@@ -204,7 +183,6 @@ async def global_permissions_check(ctx):
     except Exception:
         pass
     return False
-
 bot.buscar_usuario_dinamico = buscar_usuario_dinamico
 bot.verificar_permisos_texto = verificar_permisos_texto
 bot.verificar_permisos_comando = verificar_permisos_comando
@@ -213,7 +191,6 @@ bot.registrar_sancion = registrar_sancion
 bot.enviar_alerta_dm = enviar_alerta_dm
 bot.cargar_historial = cargar_historial
 bot.parse_duration_td = parse_duration_td
-
 # ==============================================================================
 # 💻 SISTEMA CONSOLA (/consola + /say) · SOLO 4 ROLES STAFF AUTORIZADOS
 # ==============================================================================
@@ -223,18 +200,15 @@ ROLES_STAFF_CONSOLA = [
     540178338233450546,
     1424107527443976273
 ]
-
 class ConsolaCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
     def _tiene_permiso(self, usuario: discord.Member) -> bool:
         roles_usuario = [rol.id for rol in usuario.roles]
         for id_rol in ROLES_STAFF_CONSOLA:
             if id_rol in roles_usuario:
                 return True
         return False
-
     @app_commands.command(
         name="consola",
         description="💻 Envia un mensaje por el bot como si fuera la consola"
@@ -251,7 +225,6 @@ class ConsolaCog(commands.Cog):
             embed.set_footer(text="Blurkit Network • Sistema de Seguridad", icon_url=self.bot.LOGO_BLURKIT)
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-
         permisos = inter.channel.permissions_for(inter.guild.me)
         if not permisos.send_messages:
             embed = discord.Embed(
@@ -262,7 +235,6 @@ class ConsolaCog(commands.Cog):
             embed.set_footer(text="Blurkit Network", icon_url=self.bot.LOGO_BLURKIT)
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-
         embed_ok = discord.Embed(
             title="✅ MENSAJE ENVIADO CORRECTAMENTE",
             description="El bot envio tu mensaje al canal.",
@@ -282,7 +254,6 @@ class ConsolaCog(commands.Cog):
             "[CONSOLA] " + inter.user.name + " (" + str(inter.user.id) + ") "
             + "→ #" + inter.channel.name + ": " + mensaje[:80]
         )
-
     @app_commands.command(
         name="say",
         description="💬 Alias de /consola · Envia un mensaje por el bot"
@@ -290,7 +261,6 @@ class ConsolaCog(commands.Cog):
     @app_commands.describe(mensaje="Texto que quieres que envie el bot")
     async def cmd_say(self, inter: discord.Interaction, mensaje: str):
         await self.cmd_consola.callback(self, inter, mensaje)
-
 # --- COMANDO ANUNCIO ---
 @bot.tree.command(name="anuncio", description="Envía aviso de tradeo de ítems.")
 async def cmd_anuncio_manual(interaction: discord.Interaction, canal: discord.TextChannel):
@@ -309,7 +279,6 @@ async def cmd_anuncio_manual(interaction: discord.Interaction, canal: discord.Te
     await canal.send(embed=embed)
     await interaction.response.send_message("✅ Anuncio enviado.", ephemeral=True)
     state.add_log(f"📢 /anuncio enviado por {interaction.user} en #{canal.name}")
-
 # --- SETUP HOOK ---
 async def setup_hook():
     # ==================================================
@@ -322,7 +291,6 @@ async def setup_hook():
     except Exception as e:
         print(f"\n[⚠️ ECONOMÍA] No se pudo cargar: {str(e)[:400]}\n")
         state.add_log(f"⚠️ ECONOMÍA falló: {str(e)[:80]}")
-
     # ==================================================
     # COGS FUNCIONALES
     # ==================================================
@@ -340,60 +308,51 @@ async def setup_hook():
             print("[SISTEMA] ⚠️ BLURKIT ya estaba cargado - se evita duplicado")
     except Exception as e:
         print(f"\n[⚠️ BLURKIT] No se pudo cargar: {str(e)[:400]}\n")
-
     await bot.load_extension("cogs.addrole")
     await bot.load_extension("cogs.voice")
     await bot.load_extension("cogs.reportes")
-
     try:
         await bot.load_extension("cogs.borrar")
         print("[SISTEMA] ✅ Módulo BORRAR cargado correctamente")
         state.add_log("✅ Módulo BORRAR cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.borrar: {e}")
-
     try:
         await bot.load_extension("cogs.antilinks")
         print("[SISTEMA] ✅ Módulo ANTILINKS cargado correctamente")
         state.add_log("✅ Módulo ANTILINKS cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.antilinks: {e}")
-
     try:
         await bot.load_extension("cogs.vinculacion")
         print("[SISTEMA] ✅ Módulo VINCULACIÓN cargado correctamente")
         state.add_log("✅ Módulo VINCULACIÓN cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.vinculacion: {e}")
-
     try:
         await bot.load_extension("cogs.conteo")
         print("[SISTEMA] ✅ Módulo CONTEO cargado correctamente")
         state.add_log("✅ Módulo CONTEO cargado")
     except Exception as e:
         print(f"\n[⚠️ CONTEO] No se cargó: {str(e)[:150]}\n")
-
     try:
         await bot.load_extension("cogs.configuracion")
         print("[SISTEMA] ✅ Módulo CONFIGURACIÓN cargado correctamente")
         state.add_log("✅ Módulo CONFIGURACIÓN cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.configuracion: {e}")
-
     try:
         await bot.load_extension("cogs.autoroles")
         print("[SISTEMA] ✅ Módulo AUTOROLES cargado correctamente")
         state.add_log("✅ Módulo AUTOROLES cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.autoroles: {e}")
-
     try:
         await bot.load_extension("cogs.reacciones")
         print("[SISTEMA] ✅ Módulo REACCIONES cargado correctamente")
         state.add_log("✅ Módulo REACCIONES cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.reacciones: {e}")
-
     try:
         await bot.load_extension("cogs.bienvenida")
         print("[SISTEMA] ✅ Módulo BIENVENIDA cargado correctamente")
@@ -411,28 +370,24 @@ async def setup_hook():
             print("[SISTEMA] ⚠️ MATRIMONIO ya estaba cargado - se evita duplicado")
     except Exception as e:
         print(f"\n[⚠️ MATRIMONIO] No se pudo cargar: {str(e)[:400]}\n")
-
     try:
         await bot.load_extension("cogs.cumple")
         print("[SISTEMA] ✅ Módulo CUMPLEAÑOS cargado correctamente")
         state.add_log("✅ Módulo CUMPLEAÑOS cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.cumple: {e}")
-
     try:
         await bot.load_extension("cogs.sistema_boosts")
         print("[SISTEMA] ✅ Módulo SISTEMA BOOSTS cargado correctamente")
         state.add_log("✅ Módulo SISTEMA BOOSTS cargado")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar cogs.sistema_boosts: {e}")
-
     try:
         await bot.load_extension("cogs.chat")
         print("[SISTEMA] ✅ Módulo CHAT ROL + ALERTAS cargado correctamente")
         state.add_log("✅ Módulo CHAT cargado")
     except Exception as e:
         print(f"\n[⚠️ CHAT] No se cargó: {str(e)[:200]}\n")
-
     try:
         await bot.load_extension("cogs.actualizaciones")
         print("[SISTEMA] ✅ actualizaciones.py cargado (cogs/)")
@@ -443,7 +398,6 @@ async def setup_hook():
             print("[SISTEMA] ✅ actualizaciones.py cargado (raíz)")
         except Exception as e:
             print(f"[⚠️ ALERTA] No se encontró actualizaciones.py: {e}")
-
     # ==================================================
     # 💎 SISTEMA DE TRADEOS GENS OP
     # ==================================================
@@ -458,7 +412,6 @@ async def setup_hook():
             print("[SISTEMA] ⚠️ GENS OP ya estaba cargado - se evita duplicado")
     except Exception as e:
         print(f"\n[⚠️ GENS OP] No se pudo cargar: {str(e)[:400]}\n")
-
     # ==================================================
     # SISTEMA CONSOLA (/consola + /say)
     # ==================================================
@@ -472,14 +425,12 @@ async def setup_hook():
         state.add_log("✅ Módulo CONSOLA cargado · /consola /say")
     except Exception as e:
         print(f"[⚠️ ERROR] No se pudo cargar el Sistema Consola: {e}")
-
     try:
         await bot.load_extension("cogs.anti_scam")
         print("[SISTEMA] ✅ Módulo ANTI-SCAM cargado · 10min · 1/2 → 2/2 · Canal 1424865903341867139")
         state.add_log("✅ Módulo ANTI-SCAM cargado")
     except Exception as e:
         print(f"\n[⚠️ ANTI-SCAM] No se pudo cargar: {str(e)[:250]}\n")
-
     try:
         await bot.load_extension("cogs.ventas")
         print("[SISTEMA] ✅ Módulo VENTAS cargado · Borra+DM+Logs+3Avisos→Mute5min")
@@ -488,14 +439,12 @@ async def setup_hook():
         state.add_log("✅ Módulo VENTAS cargado")
     except Exception as e:
         print(f"\n[⚠️ VENTAS] No se pudo cargar: {str(e)[:250]}\n")
-
     try:
         await bot.load_extension("cogs.meritos")
         print("[SISTEMA] ✅ Módulo MÉRITOS cargado · Tops 00:15AM Perú/Colombia · Canal 1494488667216154654")
         state.add_log("✅ Módulo MÉRITOS cargado")
     except Exception as e:
         print(f"\n[⚠️ MÉRITOS] No se pudo cargar: {str(e)[:250]}\n")
-
     try:
         await bot.load_extension("cogs.staffvoice")
         print("[SISTEMA] ✅ Módulo STAFF VOICE cargado · Canales temporales automáticos")
@@ -504,7 +453,6 @@ async def setup_hook():
         state.add_log("✅ Módulo STAFF VOICE cargado")
     except Exception as e:
         print(f"\n[⚠️ STAFF VOICE] No se pudo cargar: {str(e)[:250]}\n")
-
     try:
         await bot.load_extension("cogs.config_permisos")
         print("[SISTEMA] ✅ Módulo CONFIG PERMISOS cargado · /configurar_tickets")
@@ -513,9 +461,7 @@ async def setup_hook():
         state.add_log("✅ Módulo CONFIG PERMISOS cargado")
     except Exception as e:
         print(f"\n[⚠️ CONFIG PERMISOS] No se pudo cargar: {str(e)[:250]}\n")
-
 bot.setup_hook = setup_hook
-
 # ============================================================
 # ✅ NUEVO: TAREA PERIÓDICA PARA ACTUALIZAR DASHBOARD
 # ============================================================
@@ -540,7 +486,6 @@ async def actualizar_stats_dashboard():
         }
         for g in guilds_sorted
     ]
-
 # --- ON READY ---
 @bot.event
 async def on_ready():
@@ -566,14 +511,12 @@ async def on_ready():
     except Exception as e:
         print(f"[SYNC] ❌ Falló la sincronización en Blurkit: {e}")
         state.add_log(f"❌ Sync falló: {str(e)[:60]}")
-
 # --- ON MESSAGE ✅ ESTE ESTA BIEN, NO CAUSA DUPLICACION ---
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
     await bot.process_commands(message)
-
 # ============================================================
 # ✅ NUEVO: CONTAR COMANDOS USADOS PARA EL DASHBOARD
 # ============================================================
@@ -582,7 +525,6 @@ async def on_command_completion(ctx):
     """Se ejecuta cada vez que un comando se completa exitosamente."""
     state.commands_used += 1
     state.last_command = f"{ctx.command.name} (por {ctx.author})"
-
 # --- ON COMMAND ERROR ✅ ACTUALIZADO ---
 @bot.event
 async def on_command_error(ctx, error):
@@ -614,7 +556,6 @@ async def on_command_error(ctx, error):
         await ctx.send(f"❌ Error: `{type(error).__name__}: {error}`", delete_after=15)
     except Exception:
         pass
-
 # ============================================================
 # ✅ NUEVO: INICIAR DASHBOARD EN HILO SEPARADO
 # ============================================================
@@ -628,7 +569,6 @@ def iniciar_dashboard():
         uvicorn.run(app, host="0.0.0.0", port=5000, log_level="warning")
     except Exception as e:
         print(f"[DASHBOARD] ❌ Error al iniciar panel: {e}")
-
 # ==============================================================================
 # 🚀 ARRANCAR BOT (1 SOLA VEZ) · CON MANEJO DE ERROS LIMPIO
 # ==============================================================================
