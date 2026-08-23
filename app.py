@@ -472,15 +472,15 @@ async def actualizar_stats_dashboard():
         return
     
     state.guild_count = len(bot.guilds)
-    state.member_count = sum(g.member_count for g in bot.guilds)
+    state.member_count = sum(g.member_count or 0 for g in bot.guilds)
     state.ping_ms = round(bot.latency * 1000, 1)
     
     # Actualizar lista de servidores (top 10 por miembros)
-    guilds_sorted = sorted(bot.guilds, key=lambda g: g.member_count, reverse=True)[:10]
+    guilds_sorted = sorted(bot.guilds, key=lambda g: g.member_count or 0, reverse=True)[:10]
     state.guilds_list = [
         {
             "name": g.name,
-            "members": g.member_count,
+            "members": g.member_count or 0,
             "icon": g.icon.url if g.icon else "",
             "owner": str(g.owner) if g.owner else "Desconocido"
         }
