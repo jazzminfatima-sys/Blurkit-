@@ -1,0 +1,50 @@
+# ==============================================
+# NO SUBAS ESTOS ARCHIVOS A GITHUB
+# ==============================================
+
+# Archivos sensibles
+.env
+*.env
+historial.json
+logs_config.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
